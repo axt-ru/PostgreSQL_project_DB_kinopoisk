@@ -1,0 +1,25 @@
+
+-- Фильмы с высоким рейтингом
+
+SELECT
+  id,
+  (SELECT title FROM titles WHERE titles.id = rating.title_id) AS title_cinema,
+  (SELECT original_title FROM titles WHERE titles.id = rating.title_id) AS original_name,
+  rating
+FROM rating ORDER BY rating DESC LIMIT 10;
+
+ id  |     title_cinema      |          original_name           | rating
+-----+-----------------------+----------------------------------+--------
+ 139 | Lakin-Lang            |                                  |     10
+ 193 | Murray Group          | Hettinger, Schimmel and Schaefer |     10
+ 108 | Schaden and Sons      |                                  |     10
+ 119 | Robel, Mayer and Jast |                                  |     10
+ 144 | Beer-Cruickshank      |                                  |     10
+ 159 | Gulgowski-Lindgren    |                                  |     10
+ 101 | Schaden and Sons      |                                  |     10
+ 107 | Padberg Group         |                                  |     10
+ 109 | Wisoky-Bins           | Stehr-Kirlin                     |     10
+ 204 | Lubowitz-Kohler       | Harber, Berge and Bosco          |     10
+(10 rows)
+
+kinopoisk=#

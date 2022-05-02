@@ -1,0 +1,197 @@
+
+-- Внешние ключи были созданы на шаге 1 в командах создания таблиц.
+
+DROP DATABASE IF EXISTS kinopoisk;
+CREATE DATABASE kinopoisk;
+
+-- Таблица пользователи - users
+
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (
+	id SERIAL PRIMARY KEY,
+	signed_up_at TIMESTAMP DEFAULT now(),
+	username VARCHAR(50) UNIQUE,
+	email VARCHAR(100) UNIQUE,
+	phone_number INT UNIQUE,
+	password_hash VARCHAR(100)
+);
+
+-- Таблица countries
+
+DROP TABLE IF EXISTS countries;
+CREATE TABLE countries (
+	id SERIAL PRIMARY KEY,
+	country VARCHAR(200) UNIQUE NOT NULL
+);
+
+-- Таблица images
+
+DROP TABLE IF EXISTS images;
+CREATE TABLE images (
+	id SERIAL PRIMARY KEY,
+	filename VARCHAR(200) NOT NULL,
+	path VARCHAR(200) NOT NULL
+);
+
+-- Таблица user_profiles
+
+CREATE TYPE gender AS ENUM ('m', 'f', 'nb', 'ud');
+CREATE TYPE bit AS ENUM ('0', '1');
+
+DROP TABLE IF EXISTS user_profiles;
+CREATE TABLE user_profiles (
+	id SERIAL PRIMARY KEY,
+	user_id INT,
+	updated_at TIMESTAMP DEFAULT now(),
+	avatar INT DEFAULT 1,
+	first_name VARCHAR(100) DEFAULT ' ',
+	last_name VARCHAR(100) DEFAULT ' ',
+	gender gender DEFAULT 'ud',
+	date_of_birth DATE,
+	country_id INT,
+	about VARCHAR(350) DEFAULT ' ',
+	is_private bit DEFAULT 0,
+
+	FOREIGN KEY (user_id) REFERENCES users (id)
+		ON DELETE RESTRICT
+		ON UPDATE CASCADE,
+	FOREIGN KEY (avatar) REFERENCES images (id)
+		ON DELETE SET NULL
+		ON UPDATE CASCADE,
+	FOREIGN KEY (country_id) REFERENCES countries (id)
+		ON DELETE SET NULL
+		ON UPDATE CASCADE
+);
+
+-- Таблица messages
+
+DROP TABLE IF EXISTS messages;
+CREATE TABLE messages (
+	id SERIAL PRIMARY KEY,
+	from_user INT,
+	to_user INT,
+	created_at TIMESTAMP DEFAULT now(),
+	body_text TEXT NOT NULL,
+	FOREIGN KEY (from_user) REFERENCES users (id)
+		ON DELETE SET NULL
+		ON UPDATE CASCADE,
+	FOREIGN KEY (to_user) REFERENCES users (id)
+		ON DELETE SET NULL
+		ON UPDATE CASCADE
+);
+
+-- Таблица titles - заголовки кино, сериал и т.д.
+
+DROP TABLE IF EXISTS titles;
+CREATE TABLE titles (
+	id SERIAL PRIMARY KEY,
+	title VARCHAR(100) NOT NULL,
+	original_title VARCHAR(100) DEFAULT ' '
+);
+
+-- Таблица title_types тип (кино, сериал, короткометражка и т.д.)
+
+DROP TABLE IF EXISTS title_types;
+CREATE TABLE title_types (
+	id SERIAL PRIMARY KEY,
+	title_type VARCHAR(200) UNIQUE NOT NULL
+);
+
+-- Таблица title_info 
+
+CREATE TYPE rars AS ENUM ('0+', '6+', '12+', '16+', '18+', 'NR');
+DROP TABLE IF EXISTS title_info;
+CREATE TABLE title_info (
+	id SERIAL PRIMARY KEY,
+	title_id INT,
+	title_type_id INT DEFAULT 1,
+	poster INT DEFAULT 2,
+	tagline VARCHAR(200) DEFAULT ' ',
+	release_date DATE,
+	rars rars DEFAULT 'NR',
+	FOREIGN KEY (title_id) REFERENCES titles (id)
+		ON DELETE RESTRICT
+		ON UPDATE CASCADE,
+	FOREIGN KEY (title_type_id) REFERENCES title_types (id)
+		ON DELETE SET NULL
+		ON UPDATE CASCADE,
+	FOREIGN KEY (poster) REFERENCES images (id)
+		ON DELETE SET NULL
+		ON UPDATE CASCADE
+);
+
+-- Таблица title_country (страна) 
+
+DROP TABLE IF EXISTS title_country;
+CREATE TABLE title_country (
+	id SERIAL PRIMARY KEY,
+	title_id INT,
+	country_id INT,
+	FOREIGN KEY (title_id) REFERENCES titles (id)
+		ON DELETE RESTRICT
+		ON UPDATE CASCADE,
+	FOREIGN KEY (country_id) REFERENCES countries (id)
+		ON DELETE SET NULL
+		ON UPDATE CASCADE
+);
+
+-- Таблица companies
+
+DROP TABLE IF EXISTS companies;
+CREATE TABLE companies (
+	id SERIAL PRIMARY KEY,
+	company VARCHAR(200) UNIQUE NOT NULL
+);
+
+-- Таблица title_company (производитель)
+
+DROP TABLE IF EXISTS title_company;
+CREATE TABLE title_company (
+	id SERIAL PRIMARY KEY,
+	title_id INT,
+	company_id INT,
+	FOREIGN KEY (title_id) REFERENCES titles (id)
+		ON DELETE RESTRICT
+		ON UPDATE CASCADE,
+	FOREIGN KEY (company_id) REFERENCES companies (id)
+		ON DELETE SET NULL
+		ON UPDATE CASCADE
+);
+
+-- Таблица rating (рейтинг)
+
+DROP TABLE IF EXISTS rating;
+CREATE TABLE rating (
+	id SERIAL PRIMARY KEY,
+	title_id INT,
+	user_id INT,
+	rating INT NOT NULL DEFAULT 0,
+	created_at TIMESTAMP DEFAULT now(),
+	updated_at TIMESTAMP DEFAULT now(),
+	FOREIGN KEY (title_id) REFERENCES titles (id)
+		ON DELETE RESTRICT
+		ON UPDATE CASCADE,
+	FOREIGN KEY (user_id) REFERENCES users (id)
+		ON DELETE RESTRICT
+		ON UPDATE CASCADE
+);
+
+DROP TABLE IF EXISTS director;
+CREATE TABLE director (
+	id SERIAL PRIMARY KEY,
+	first_name VARCHAR(100),
+	last_name VARCHAR(100),
+	date_of_birth DATE,
+	date_of_death DATE DEFAULT NULL,
+	gender VARCHAR(100),
+	photo INT,
+	country_id INT,
+
+	FOREIGN KEY (photo) REFERENCES images (id)
+		ON DELETE SET NULL
+		ON UPDATE CASCADE,
+	FOREIGN KEY (country_id) REFERENCES countries (id)
+		ON DELETE SET NULL
+		ON UPDATE CASCADE
+);
+

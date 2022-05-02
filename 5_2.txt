@@ -1,0 +1,12 @@
+
+-- Поиск фильма для возрастной категории - 6+
+
+SELECT 
+	(SELECT title FROM titles WHERE titles.id = title_info.title_id) AS title_cinema,
+	(SELECT title_type FROM title_types WHERE title_types.id = title_info.title_type_id),
+	rars
+	  FROM title_info
+	 WHERE (rars = '6+')
+	 ORDER BY
+		 rars
+	 LIMIT 10;

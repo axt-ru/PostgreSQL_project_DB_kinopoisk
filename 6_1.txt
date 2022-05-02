@@ -1,0 +1,14 @@
+
+-- Все фильмы из России для подростков (12+) c обзором
+
+SELECT 
+	 titles.id,
+	 titles.title,
+	 titles.original_title,
+	 countries.country,
+	 title_info.synopsis
+	 FROM titles
+	 	JOIN title_country ON title_country.title_id = titles.id
+		JOIN countries ON countries.id = title_country.country_id
+		JOIN title_info ON title_info.title_id = titles.id
+	 WHERE (country = 'Russian Federation') AND (rars = '12+');

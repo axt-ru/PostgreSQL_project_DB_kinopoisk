@@ -1,0 +1,28 @@
+
+-- Создать триггер. Триггер осуществляет проверку вводимых сообщений на запрещенные слова (цензура) – при попытке ввести запрещенное к использованию слово – оно заменяется на слово «censored»  
+
+CREATE TABLE censored_words (word VARCHAR (300));
+INSERT INTO censored_words VALUES ('тест'), ('test');
+SELECT * FROM censored_words;
+
+CREATE OR REPLACE FUNCTION censored_messages_trigger()
+RETURNS TRIGGER AS
+$$
+	DECLARE is_found BOOLEAN;
+BEGIN
+   is_found := EXISTS(SELECT * FROM censored_words WHERE NEW.body_text LIKE '%' || word || '%' );
+	IF is_found THEN
+     NEW.body_text := 'censored';
+	END IF;
+	RETURN NEW;
+END
+$$
+LANGUAGE PLPGSQL;
+
+CREATE TRIGGER verification_word_in_messages_trigger BEFORE UPDATE ON messages
+ FOR EACH ROW
+ EXECUTE FUNCTION censored_messages_trigger();
+
+SELECT body_text FROM messages WHERE id = 55;
+
+UPDATE messages SET body_text = 'это тест проверка' WHERE id = 55;

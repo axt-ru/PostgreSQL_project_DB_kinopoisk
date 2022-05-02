@@ -1,0 +1,32 @@
+
+-- Первое и последнее сообщение полученное пользователем в течении недели
+
+SELECT
+	users.id,
+	first_name || ' '|| last_name AS name,
+	first_sent_message_id,
+	first_received_message_id
+	FROM users
+	JOIN user_profiles ON user_profiles.user_id = users.id
+	LEFT JOIN (
+		SELECT
+		users.id AS user_id,
+		MIN(messages.id) AS first_sent_message_id
+		FROM users
+	LEFT JOIN messages
+		ON users.id = messages.from_user
+	WHERE messages.created_at > NOW() - interval '1 week'
+	GROUP BY users.id
+) AS messages_from
+		ON users.id = messages_from.user_id
+	LEFT JOIN (
+	SELECT
+	users.id AS user_id,
+	MIN(messages.id) AS first_received_message_id
+		FROM users
+	LEFT JOIN messages
+	ON users.id = messages.to_user
+WHERE messages.created_at > NOW() - interval '1 week'
+GROUP BY users.id
+) AS messages_to
+ON users.id = messages_to.user_id;

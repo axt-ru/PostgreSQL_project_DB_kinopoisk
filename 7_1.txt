@@ -1,0 +1,16 @@
+
+-- Представление - показать наименование фильма, которое осталось без краткого обзора
+
+DROP VIEW IF EXISTS cinema_without_synopsis;
+CREATE VIEW cinema_without_synopsis AS
+ SELECT 
+ 	title AS "film_title",
+	original_title,
+	title_info.release_date
+ 	FROM titles
+ 		LEFT JOIN title_info
+ 			ON title_info.title_id = titles.id
+	WHERE title_info.synopsis IS NULL;
+
+
+SELECT * FROM cinema_without_synopsis;

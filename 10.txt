@@ -1,0 +1,100 @@
+-- 10. Для одного из запросов, созданных в пункте 6, провести оптимизацию. В качестве отчета
+-- приложить планы выполнения запроса, ваш анализ и показать действия, которые улучшили
+-- эффективность запроса.
+
+kinopoisk=# EXPLAIN ANALYZE SELECT
+kinopoisk-#      titles.id,
+kinopoisk-#      titles.title,
+kinopoisk-#      titles.original_title,
+kinopoisk-#      countries.country,
+kinopoisk-#      title_info.synopsis
+kinopoisk-#      FROM titles
+kinopoisk-#             JOIN title_country ON title_country.title_id = titles.id
+kinopoisk-#             JOIN countries ON countries.id = title_country.country_id
+kinopoisk-#             JOIN title_info ON title_info.title_id = titles.id
+kinopoisk-#      WHERE (country = 'Russian Federation') AND (rars = '12+');
+                                                           QUERY PLAN
+---------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=5.16..15.39 rows=1 width=386) (actual time=0.281..0.502 rows=2 loops=1)
+   Join Filter: (title_country.title_id = title_info.title_id)
+   Rows Removed by Join Filter: 34
+   ->  Nested Loop  (cost=5.16..7.94 rows=1 width=46) (actual time=0.266..0.335 rows=2 loops=1)
+         ->  Hash Join  (cost=5.01..7.69 rows=1 width=15) (actual time=0.253..0.316 rows=2 loops=1)
+               Hash Cond: (title_country.country_id = countries.id)
+               ->  Seq Scan on title_country  (cost=0.00..2.32 rows=132 width=8) (actual time=0.020..0.043 rows=132 loops=1)
+               ->  Hash  (cost=5.00..5.00 rows=1 width=15) (actual time=0.104..0.104 rows=1 loops=1)
+                     Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                     ->  Seq Scan on countries  (cost=0.00..5.00 rows=1 width=15) (actual time=0.074..0.092 rows=1 loops=1)
+                           Filter: ((country)::text = 'Russian Federation'::text)
+                           Rows Removed by Filter: 239
+         ->  Index Scan using titles_pkey on titles  (cost=0.14..0.25 rows=1 width=31) (actual time=0.006..0.007 rows=1 loops=2)
+               Index Cond: (id = title_country.title_id)
+   ->  Seq Scan on title_info  (cost=0.00..7.25 rows=16 width=348) (actual time=0.008..0.078 rows=18 loops=2)
+         Filter: (rars = '12+'::rars)
+         Rows Removed by Filter: 82
+ Planning Time: 1.958 ms
+ Execution Time: 0.614 ms
+(19 rows)
+
+
+kinopoisk=#
+kinopoisk=# SELECT indexname FROM pg_indexes WHERE tablename = 'countries';
+       indexname
+-----------------------
+ countries_pkey
+ countries_country_key
+(2 rows)
+
+
+kinopoisk=# SELECT indexname FROM pg_indexes WHERE tablename = 'title_info';
+    indexname
+-----------------
+ title_info_pkey
+(1 row)
+
+
+kinopoisk=# CREATE INDEX title_info_title_id_fk ON title_info (title_id);
+CREATE INDEX
+kinopoisk=# SELECT indexname FROM pg_indexes WHERE tablename = 'title_country';
+     indexname
+--------------------
+ title_country_pkey
+(1 row)
+
+
+kinopoisk=# CREATE INDEX title_country_title_id_fk ON title_country (title_id);
+CREATE INDEX
+kinopoisk=# EXPLAIN ANALYZE SELECT
+kinopoisk-#      titles.id,
+kinopoisk-#      titles.title,
+kinopoisk-#      titles.original_title,
+kinopoisk-#      countries.country,
+kinopoisk-#      title_info.synopsis
+kinopoisk-#      FROM titles
+kinopoisk-#             JOIN title_country ON title_country.title_id = titles.id
+kinopoisk-#             JOIN countries ON countries.id = title_country.country_id
+kinopoisk-#             JOIN title_info ON title_info.title_id = titles.id
+kinopoisk-#      WHERE (country = 'Russian Federation') AND (rars = '12+');
+                                                                QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=5.30..8.36 rows=1 width=386) (actual time=0.133..0.206 rows=2 loops=1)
+   ->  Nested Loop  (cost=5.16..7.94 rows=1 width=46) (actual time=0.126..0.193 rows=2 loops=1)
+         ->  Hash Join  (cost=5.01..7.69 rows=1 width=15) (actual time=0.119..0.182 rows=2 loops=1)
+               Hash Cond: (title_country.country_id = countries.id)
+               ->  Seq Scan on title_country  (cost=0.00..2.32 rows=132 width=8) (actual time=0.015..0.038 rows=132 loops=1)
+               ->  Hash  (cost=5.00..5.00 rows=1 width=15) (actual time=0.092..0.092 rows=1 loops=1)
+                     Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                     ->  Seq Scan on countries  (cost=0.00..5.00 rows=1 width=15) (actual time=0.072..0.090 rows=1 loops=1)
+                           Filter: ((country)::text = 'Russian Federation'::text)
+                           Rows Removed by Filter: 239
+         ->  Index Scan using titles_pkey on titles  (cost=0.14..0.25 rows=1 width=31) (actual time=0.003..0.004 rows=1 loops=2)
+               Index Cond: (id = title_country.title_id)
+   ->  Index Scan using title_info_title_id_fk on title_info  (cost=0.14..0.40 rows=1 width=348) (actual time=0.004..0.005 rows=1 loops=2)
+         Index Cond: (title_id = title_country.title_id)
+         Filter: (rars = '12+'::rars)
+ Planning Time: 0.963 ms
+ Execution Time: 0.252 ms
+(17 rows)
+
+
+kinopoisk=#

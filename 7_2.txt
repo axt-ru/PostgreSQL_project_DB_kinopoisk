@@ -1,0 +1,16 @@
+
+-- Представление - показать все фильмы "Только для взрослых", отсортированные по типу 
+
+DROP VIEW IF EXISTS film_for_adult_users;
+CREATE VIEW film_for_adult_users AS
+SELECT 
+	titles.title,
+	title_types.title_type,
+	title_info.poster
+	FROM titles 
+		JOIN title_info ON title_info.title_id = titles.id 
+		JOIN title_types ON title_types.id = title_info.title_type_id
+	WHERE rars = '18+'
+	ORDER BY title_types.title_type;
+
+SELECT * FROM film_for_adult_users;

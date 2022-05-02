@@ -1,0 +1,20 @@
+
+-- Пользовательская функция - показывает количество режиссёров в зависимости от страны 
+
+SELECT * FROM countries;
+SELECT * FROM director;
+
+DROP FUNCTION IF EXISTS directors_country;
+CREATE FUNCTION directors_country(country_name VARCHAR(200))
+RETURNS BIGINT AS 
+$$
+	SELECT 
+		COUNT(*)
+	  FROM director
+	  	 JOIN countries ON countries.id = director.country_id
+	  WHERE countries.country = country_name
+	  GROUP BY country_id;
+$$
+LANGUAGE SQL;
+
+SELECT directors_country('Korea');
